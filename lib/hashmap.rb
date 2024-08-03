@@ -11,6 +11,7 @@ class HashMap
 
   private_constant :Node
   attr_accessor :buckets
+  LOAD_FACTOR = 0.75
 
   def initialize
     @buckets = Array.new(16)
@@ -20,12 +21,23 @@ class HashMap
     key.each_byte.reduce(0) { |hash_code, byte| 31 * hash_code + byte } % buckets.length
   end
 
-  def set(key, value, buckets)
+  def set(key, value)
     index = hash(key)
-    new_node = Node.new(key, value)
     current = buckets[index]
+    new_node = Node.new(key, value)
     replace(current, key, new_node) if current
     prepend(index, new_node)
+  end
+
+  def remove(key)
+    index = hash(key)
+    current = buckets[index]
+    return if buckets[index].nil?
+    while current.next_node
+      current = nil if current.key == key
+      current = current.next_node
+    end
+    buckets[index] = nil
   end
 
   def prepend(index, new_node)
@@ -70,23 +82,24 @@ class HashMap
 end
 
 map = HashMap.new
-map.set('a', 1000, map.buckets)
-map.set('Q', 2, map.buckets)
-map.set('b', 9999, map.buckets)
-# map.set('c', 888, map.buckets)
-# map.set('d', 888, map.buckets)
-# map.set('e', 888, map.buckets)
-# map.set('f', 888, map.buckets)
-# map.set('g', 888, map.buckets)
-# map.set('h', 888, map.buckets)
-# map.set('i', 888, map.buckets)
-# map.set('j', 888, map.buckets)
-# map.set('k', 888, map.buckets)
-# map.set('l', 888, map.buckets)
-# map.set('m', 888, map.buckets)
-# map.set('n', 888, map.buckets)
-# map.set('o', 888, map.buckets)
+map.set('a', 1000)
+map.set('Q', 2)
+map.set('b', 9999)
+map.set('c', 888)
+map.set('d', 888)
+map.set('e', 888)
+map.set('f', 888)
+map.set('g', 888)
+map.set('h', 888)
+map.set('i', 888)
+map.set('j', 888)
+map.set('k', 888)
+map.set('l', 888)
+map.set('m', 888)
+map.set('n', 888)
+map.set('o', 888)
 
-map.shrink
+map.expand
+map.remove('Q')
 map.print_hashmap
 puts map.buckets.length
