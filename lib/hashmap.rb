@@ -2,10 +2,10 @@ class HashMap
   class Node
     attr_accessor :key, :value, :next_node
 
-    def initialize(key=nil, value=nil)
+    def initialize(key=nil, value=nil, next_node=nil)
       @key = key
       @value = value
-      @next_node = nil
+      @next_node = next_node
     end
   end
 
@@ -17,12 +17,12 @@ class HashMap
     @buckets = Array.new(16)
   end
 
-  def hash(key)
+  def hash(key, buckets)
     key.each_byte.reduce(0) { |hash_code, byte| 31 * hash_code + byte } % buckets.length
   end
 
   def set(key, value)
-    index = hash(key)
+    index = hash(key, buckets)
     current = buckets[index]
     new_node = Node.new(key, value)
     replace(current, key, new_node) if current
@@ -30,14 +30,18 @@ class HashMap
   end
 
   def remove(key)
-    index = hash(key)
+    index = hash(key, buckets)
     current = buckets[index]
     return if buckets[index].nil?
-    while current.next_node
-      current = nil if current.key == key
-      current = current.next_node
+    buckets[index].key == key ? buckets[index] = current.next_node : skip_node(current, key)
+  end
+
+  def skip_node(current_node, key)
+    while current_node.next_node
+      break if current_node.next_node.key == key
+      current_node = current_node.next_node
     end
-    buckets[index] = nil
+    current_node.next_node = current_node.next_node.next_node
   end
 
   def prepend(index, new_node)
@@ -52,25 +56,25 @@ class HashMap
     end
   end
 
-  def rehash(multiplier)
+  def rehash(multiplier = 2)
     new_buckets = Array.new(buckets.length * multiplier)
-    buckets.each { |bucket| new_buckets[hash(bucket.key)] = bucket if bucket }
+
+    buckets.each do |bucket|
+      while bucket
+        index = hash(bucket.key, new_buckets)
+        temp_node = Node.new(bucket.key, bucket.value, new_buckets[index])
+        new_buckets[index] = temp_node
+        bucket = bucket.next_node
+      end
+    end
     self.buckets = new_buckets
   end
 
-  def expand
-    rehash(2)
-  end
-
-  def shrink
-    rehash(0.5)
-  end
-
+  def entries; end
 
   def print_hashmap
     buckets.each_with_index do |current, idx|
       if current
-      # current = buckets[index]
         while current.next_node
           puts "Index: #{idx} Key: #{current.key} => Value: #{current.value}"
           current = current.next_node
@@ -82,8 +86,9 @@ class HashMap
 end
 
 map = HashMap.new
-map.set('a', 1000)
 map.set('Q', 2)
+map.set('a', 1000)
+map.set('A', 88)
 map.set('b', 9999)
 map.set('c', 888)
 map.set('d', 888)
@@ -98,8 +103,9 @@ map.set('l', 888)
 map.set('m', 888)
 map.set('n', 888)
 map.set('o', 888)
+map.set('z', 1234)
 
-map.expand
-map.remove('Q')
+map.rehash
+map.remove('a')
 map.print_hashmap
 puts map.buckets.length
