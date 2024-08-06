@@ -17,16 +17,34 @@ class HashMap
     @buckets = Array.new(16)
   end
 
-  def hash(key, buckets)
+  def hash(key, buckets=self.buckets)
     key.each_byte.reduce(0) { |hash_code, byte| 31 * hash_code + byte } % buckets.length
   end
 
   def set(key, value)
-    index = hash(key, buckets)
+    index = hash(key)
     current = buckets[index]
-    new_node = Node.new(key, value)
-    replace(current, key, new_node) if current
-    prepend(index, new_node)
+    return if replace(current, key, value)
+    new_node = Node.new(key, value, buckets[index])
+    buckets[index] = new_node
+  end
+
+  def replace(current_node, key, value)
+    while current_node
+      if current_node.key == key
+        current_node.value = value
+        return true
+      end
+      current_node = current_node.next_node
+    end
+    false
+  end
+
+  def entries
+    return if buckets.all(nil)
+    buckets.each do |bucket|
+      while bucket
+    end
   end
 
   def remove(key)
@@ -41,19 +59,7 @@ class HashMap
       break if current_node.next_node.key == key
       current_node = current_node.next_node
     end
-    current_node.next_node = current_node.next_node.next_node
-  end
-
-  def prepend(index, new_node)
-    new_node.next_node = buckets[index]
-    buckets[index] = new_node
-  end
-
-  def replace(current_node, key, new_node)
-    while current_node
-      current_node = new_node if current_node.key == key
-      current_node = current_node.next_node
-    end
+    current_node.next_node = current_node.next_node.next_node if current_node.next_node
   end
 
   def rehash(multiplier = 2)
@@ -69,8 +75,6 @@ class HashMap
     end
     self.buckets = new_buckets
   end
-
-  def entries; end
 
   def print_hashmap
     buckets.each_with_index do |current, idx|
@@ -107,5 +111,11 @@ map.set('z', 1234)
 
 map.rehash
 map.remove('a')
+
+# map.set('Q', 123)
+map.set('A', 155)
+map.set('y', 'uu')
+map.set('y', 'zz')
+
 map.print_hashmap
 puts map.buckets.length
